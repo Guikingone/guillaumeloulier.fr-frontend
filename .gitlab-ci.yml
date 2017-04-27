@@ -1,0 +1,60 @@
+stages:
+    - test
+    - e2e
+    - server_config
+    - deploy
+
+before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - ssh-add <(echo "$SERVER_PRIVATE_KEY")
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+
+test:
+    stage: test
+    image: guikingone/front_env
+    before_script:
+        - npm install
+    script:
+        - echo 'Tests in progress'
+
+e2e:
+    stage: e2e
+    image: guikingone/front_env
+    before_script:
+        - npm install
+    script:
+        - echo 'e2e tests in progress'
+
+server_config:
+    stage: server_config
+    image: guikingone/prod_env
+    only:
+        - master
+    before_script:
+    script:
+        - echo 'server configuration in progress'
+        - ssh $server_user@$server_host "rm -rf /home/$SERVER_OWNER/www/$PROJECT_NAME"
+        - echo 'Project folder deleted'
+        - ssh $server_user@$server_host "mkdir -p /home/$SERVER_OWNER/www/$PROJECT_NAME"
+        - ssh $server_user@$server_host "ln -s -f /home/$SERVER_OWNER/www/$PROJECT_NAME /var/www/$PROJECT_NAME"
+        - ssh $server_user@$server_host "chown -hR $SERVER_OWNER:users /home/$SERVER_OWNER/www/$PROJECT_NAME && chmod -R 777 /home/$SERVER_OWNER/www/$PROJECT_NAME"
+        - echo 'Projet folder created and configured'
+
+deploy:
+    stage: deploy
+    image: guikingone/prod_env
+    only:
+        - master
+    before_script:
+        - npm install
+        - npm run build --prod
+    script:
+        - echo 'Deployment in progress'
+        - scp -r dist/* $server_user@$server_host:/home/$SERVER_OWNER/www/$PROJECT_NAME
+        - echo 'Project binaries moved'
+        - scp -r /etc/apache2/sites-available/$PROJECT_NAME.conf $server_user@$server_host:/etc/apache2/sites-available/$PROJECT_NAME.conf
+        - ssh $server_user@$server_host "a2ensite $PROJECT_NAME.conf && a2enmod ssl && a2enmod rewrite && service apache2 restart"
+        - ssh $server_user@$server_host "systemctl status apache2.service -l"
+        - echo 'Project server configuration activated'
