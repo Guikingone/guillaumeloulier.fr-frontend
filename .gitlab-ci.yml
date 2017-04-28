@@ -49,7 +49,9 @@ deploy:
         - master
     before_script:
         - npm install
+        - echo 'Project dependencies installed'
         - npm run build --prod
+        - echo 'Production binaries builded'
     script:
         - echo 'Deployment in progress'
         - scp -r dist/* $server_user@$server_host:/home/$SERVER_OWNER/www/$PROJECT_NAME
