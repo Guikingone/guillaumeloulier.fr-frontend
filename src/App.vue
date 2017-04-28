@@ -1,8 +1,5 @@
 <template>
-  <div id="app" class="mdl-cell--12-col-desktop mdl-cell--4-col-phone">
-      <router-view></router-view>
-    </div>
-  </div>
+  <router-view></router-view>
 </template>
 
 <script>

@@ -1,6 +1,6 @@
 <template>
-  <div class="hello">
-    <p>Because creating the future require expertise !</p>
+  <div>
+    <p class="text-xl-center">Because creating the future require expertise !</p>
   </div>
 </template>
 
